@@ -1,9 +1,16 @@
 package team.jit.controller;
 
 import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import team.jit.dto.EmployeeForm;
+import team.jit.dto.EmployeeUpdateForm;
 import team.jit.entity.Employee;
 import team.jit.service.EmployeeService;
 
@@ -19,5 +26,25 @@ public class EmployeeController {
     @GetMapping
     public List<Employee> findAllEmployees() {
         return employeeService.findAllEmployees();
+    }
+
+    @GetMapping("/{id}")
+    public Employee findEmployee(@PathVariable Long id) {
+        return employeeService.findEmployee(id);
+    }
+
+    @PostMapping
+    public Employee saveEmployee(@RequestBody EmployeeForm form) {
+        return employeeService.saveEmployee(form);
+    }
+
+    @PutMapping("/{id}")
+    public Employee updateEmployee(@PathVariable Long id, @RequestBody EmployeeUpdateForm form) {
+        return employeeService.updateEmployee(id, form);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteEmployee(@PathVariable Long id) {
+        employeeService.deleteEmployee(id);
     }
 }
