@@ -12,7 +12,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -33,10 +32,12 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
     private String name;
 
     private String surname;
+
+    @Column(unique = true)
+    private String personalId;
 
     private BigDecimal salary;
 
@@ -57,6 +58,8 @@ public class Employee {
         return Employee.builder()
                 .name(form.getName())
                 .surname(form.getSurname())
+                .personalId(form.getPersonalId())
+                .address(form.getAddress())
                 .build();
     }
 }

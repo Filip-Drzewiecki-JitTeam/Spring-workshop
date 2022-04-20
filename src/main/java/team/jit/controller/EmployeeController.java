@@ -14,6 +14,7 @@ import team.jit.dto.EmployeeUpdateForm;
 import team.jit.entity.Employee;
 import team.jit.service.EmployeeService;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @AllArgsConstructor
@@ -34,7 +35,7 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public Employee saveEmployee(@RequestBody EmployeeForm form) {
+    public Employee saveEmployee(@Valid @RequestBody EmployeeForm form) {
         return employeeService.saveEmployee(form);
     }
 
