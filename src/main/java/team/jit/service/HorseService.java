@@ -1,6 +1,5 @@
 package team.jit.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import team.jit.entity.Horse;
 import team.jit.repository.HorseRepository;
