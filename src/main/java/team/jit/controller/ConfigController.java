@@ -34,6 +34,9 @@ public class ConfigController {
         if (profiles.contains("dev")) {
             configs.put("dev", true);
         }
+        if (profiles.contains("qa")) {
+            configs.put("qa", true);
+        }
         return configs;
     }
 }
