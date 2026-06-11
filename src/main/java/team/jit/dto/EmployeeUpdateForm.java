@@ -4,7 +4,7 @@ import lombok.Data;
 import team.jit.entity.Address;
 import team.jit.entity.Position;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 
 @Data

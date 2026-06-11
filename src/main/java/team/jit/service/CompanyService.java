@@ -7,7 +7,7 @@ import team.jit.entity.Company;
 import team.jit.entity.Employee;
 import team.jit.repository.CompanyRepository;
 
-import javax.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 
 @Slf4j
