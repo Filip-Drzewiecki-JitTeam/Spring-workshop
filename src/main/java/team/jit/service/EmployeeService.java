@@ -12,7 +12,20 @@ import team.jit.repository.CompanyRepository;
 import team.jit.repository.EmployeeRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import team.jit.repository.InterfaceImpl;
+import team.jit.repository.MyCustomInterface;
+import team.jit.repository.MyDifferentImpl;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -21,11 +34,26 @@ public class EmployeeService {
 
     public final EmployeeRepository employeeRepository;
     public final CompanyRepository companyRepository;
+    public final EmailService emailService;
 
     public List<Employee> findAllEmployees() {
         List<Employee> employees = employeeRepository.findAll();
+
+        Set<Employee> employeesSet = new HashSet<Employee>(employees);
+        employeesSet.add(employees.get(0));
+
+        Map<Long, Employee> employeesMap = employees.stream()
+                .collect(Collectors.toMap(Employee::getId, e -> e));
+
         log.info("fetching employees");
         return employees;
+    }
+
+    public Page<Employee> findPagedEmployees(String name,
+                                              BigDecimal salaryMin,
+                                              BigDecimal salaryMax,
+                                              Pageable pageable) {
+        return employeeRepository.findByFilters(name, salaryMin, salaryMax, pageable);
     }
 
     public Employee findEmployee(Long id) {
@@ -36,7 +64,9 @@ public class EmployeeService {
     @Transactional
     public Employee saveEmployee(EmployeeForm form) {
         Employee employee = Employee.of(form);
-        return employeeRepository.save(employee);
+        var saved = employeeRepository.save(employee);
+        emailService.sendEmail(employee);
+        return saved;
     }
 
     @Transactional

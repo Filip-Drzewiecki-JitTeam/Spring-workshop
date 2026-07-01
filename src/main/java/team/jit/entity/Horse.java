@@ -12,6 +12,7 @@ public class Horse {
 
     private String name;
 
+    private String color;
 
     public Horse(Long id, String name) {
         this.id = id;

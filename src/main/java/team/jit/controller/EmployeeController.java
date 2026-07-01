@@ -16,7 +16,12 @@ import team.jit.dto.EmployeeUpdateForm;
 import team.jit.entity.Employee;
 import team.jit.service.EmployeeService;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.util.List;
 
 @AllArgsConstructor
@@ -29,6 +34,15 @@ public class EmployeeController {
     @GetMapping
     public List<Employee> findAllEmployees() {
         return employeeService.findAllEmployees();
+    }
+    
+    @GetMapping("/paged")
+    public Page<Employee> findPagedEmployees(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) BigDecimal salaryMin,
+            @RequestParam(required = false) BigDecimal salaryMax,
+            @PageableDefault(size = 5, sort = "id") Pageable pageable) {
+        return employeeService.findPagedEmployees(name, salaryMin, salaryMax, pageable);
     }
 
     @GetMapping("/{id}")
