@@ -1,26 +1,18 @@
 package team.jit.controller;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 import team.jit.dto.EmployeeForm;
 import team.jit.dto.EmployeeUpdateForm;
 import team.jit.entity.Employee;
 import team.jit.service.EmployeeService;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.RequestParam;
-import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -31,11 +23,13 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
 
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OPERATOR', 'ADMIN')")
     @GetMapping
     public List<Employee> findAllEmployees() {
         return employeeService.findAllEmployees();
     }
-    
+
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OPERATOR', 'ADMIN')")
     @GetMapping("/paged")
     public Page<Employee> findPagedEmployees(
             @RequestParam(required = false) String name,
@@ -45,24 +39,30 @@ public class EmployeeController {
         return employeeService.findPagedEmployees(name, salaryMin, salaryMax, pageable);
     }
 
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OPERATOR', 'ADMIN')")
     @GetMapping("/{id}")
     public Employee findEmployee(@PathVariable Long id) {
         return employeeService.findEmployee(id);
     }
 
+    @PreAuthorize("hasAnyRole('OPERATOR', 'ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public Employee saveEmployee(@Valid @RequestBody EmployeeForm form) {
         return employeeService.saveEmployee(form);
     }
 
+    @PreAuthorize("hasAnyRole('OPERATOR', 'ADMIN')")
     @PutMapping("/{id}")
     public Employee updateEmployee(@PathVariable Long id, @RequestBody EmployeeUpdateForm form) {
         return employeeService.updateEmployee(id, form);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void deleteEmployee(@PathVariable Long id) {
         employeeService.deleteEmployee(id);
     }
 }
+
+

@@ -72,16 +72,23 @@ public class EmployeeService {
     @Transactional
     public Employee updateEmployee(Long id, EmployeeUpdateForm updateForm) {
         Employee employee = findEmployee(id);
-        Company company = companyRepository.getOne(updateForm.getCompanyId());
-        employee.setSalary(updateForm.getSalary());
-        employee.setAddress(updateForm.getAddress());
-        employee.setPosition(updateForm.getPosition());
-        employee.setCompany(company);
+        if (updateForm.getName()     != null) employee.setName(updateForm.getName());
+        if (updateForm.getSalary()   != null) employee.setSalary(updateForm.getSalary());
+        if (updateForm.getAddress()  != null) employee.setAddress(updateForm.getAddress());
+        if (updateForm.getPosition() != null) employee.setPosition(updateForm.getPosition());
+        if (updateForm.getCompanyId() != null) {
+            Company company = companyRepository.findById(updateForm.getCompanyId())
+                    .orElseThrow(() -> new EntityNotFoundException("Company with id=" + updateForm.getCompanyId() + " doesn't exist"));
+            employee.setCompany(company);
+        }
         return employeeRepository.save(employee);
     }
 
     @Transactional
     public void deleteEmployee(Long id) {
+        if (!employeeRepository.existsById(id)) {
+            throw new EntityNotFoundException("Employee with id=" + id + " doesn't exist");
+        }
         employeeRepository.deleteById(id);
     }
 }

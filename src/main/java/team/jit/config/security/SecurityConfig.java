@@ -1,12 +1,16 @@
 package team.jit.config.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -14,18 +18,30 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Simple security config — all endpoints are open (permit-all).
+ * JWT-based security config with role-based access control.
+ *
+ * Roles:
+ *  - ROLE_CUSTOMER  → read-only (GET) access to employees and companies
+ *  - ROLE_OPERATOR  → read + create/update employees and companies
+ *  - ROLE_ADMIN     → full access including DELETE and admin tools
  *
  * Key concepts:
- *  - SecurityFilterChain  : the modern way to configure Spring Security (replaces WebSecurityConfigurerAdapter)
- *  - cors()               : delegates CORS pre-flight handling to Spring Security before any auth check
- *  - csrf disabled        : standard for stateless REST APIs consumed by a JS frontend
- *  - SessionCreationPolicy.STATELESS : no HTTP session — every request must carry its own credentials (JWT etc.)
- *  - CorsConfigurationSource : single place that defines allowed origins/methods/headers for the whole app
+ *  - SecurityFilterChain    : modern way to configure Spring Security
+ *  - JwtAuthenticationFilter: validates the Bearer JWT on every request and populates SecurityContext
+ *  - cors()                 : delegates CORS pre-flight to CorsConfigurationSource bean
+ *  - csrf disabled          : standard for stateless REST APIs
+ *  - SessionCreationPolicy.STATELESS : no HTTP session — every request must carry its own JWT
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -36,14 +52,52 @@ public class SecurityConfig {
             // Disable CSRF — not needed for stateless REST APIs
             .csrf(AbstractHttpConfigurer::disable)
 
-            // No HTTP session — REST APIs are stateless
+            // No HTTP session — every request must carry its own JWT
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            // Allow every request without authentication (workshop / learning purpose)
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            // Role-based access rules
+            .authorizeHttpRequests(auth -> auth
+
+                // Public endpoints — no token required
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/mvc/**").permitAll()
+                .requestMatchers("/error").permitAll()
+                //.requestMatchers(HttpMethod.POST,  "/api/employees/**").hasAnyRole("OPERATOR", "ADMIN")
+
+                // Fine-grained role checks are handled by @PreAuthorize on each controller method.
+                // Every other request still requires a valid JWT.
+                .anyRequest().authenticated()
+            )
+
+            // Register the JWT filter BEFORE the default username/password filter
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // Return 401 for requests that carry no / invalid token (unauthenticated).
+            // Without this, Spring Security defaults to 403 for anonymous access.
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(unauthorizedEntryPoint()))
+
+            // Allow H2 console to render frames
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
+    }
+
+    /**
+     * Returns HTTP 401 Unauthorized when a request reaches a protected endpoint
+     * without any (or with an invalid) JWT.
+     *
+     * Why needed: Spring Security's default AccessDeniedHandler returns 403 even for
+     * completely anonymous (unauthenticated) requests.  The correct semantic is:
+     *   401 — "who are you?" (no / bad credentials)
+     *   403 — "I know who you are, but you're not allowed" (authenticated but wrong role)
+     */
+    @Bean
+    public AuthenticationEntryPoint unauthorizedEntryPoint() {
+        return (request, response, authException) ->
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
     }
 
     /**
