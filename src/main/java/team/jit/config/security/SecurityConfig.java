@@ -18,12 +18,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * JWT-based security config with role-based access control.
+ * JWT-based security config.
  *
- * Roles:
- *  - ROLE_CUSTOMER  → read-only (GET) access to employees and companies
- *  - ROLE_OPERATOR  → read + create/update employees and companies
- *  - ROLE_ADMIN     → full access including DELETE and admin tools
+ * Access rules:
+ *  - /security-test/** → role-checked via @PreAuthorize on SecurityTestController
+ *  - everything else   → fully public (no token required)
+ *
+ * The JWT filter still runs on every request so that when a token IS present
+ * the SecurityContext is populated and @PreAuthorize can evaluate roles.
  *
  * Key concepts:
  *  - SecurityFilterChain    : modern way to configure Spring Security
@@ -64,11 +66,14 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/mvc/**").permitAll()
                 .requestMatchers("/error").permitAll()
+                // MessageSource demo — fully public so students can test without a token
+                .requestMatchers("/messages/**").permitAll()
                 //.requestMatchers(HttpMethod.POST,  "/api/employees/**").hasAnyRole("OPERATOR", "ADMIN")
 
                 // Fine-grained role checks are handled by @PreAuthorize on each controller method.
                 // Every other request still requires a valid JWT.
-                .anyRequest().authenticated()
+                //.anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
 
             // Register the JWT filter BEFORE the default username/password filter
